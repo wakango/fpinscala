@@ -28,8 +28,20 @@ object Par {
       def call = a(es).get
     })
 
+  def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
+
+  def asyncF[A, B](f: A => B): A => Par[B] = a => lazyUnit(f(a))
+
   def map[A,B](pa: Par[A])(f: A => B): Par[B] = 
     map2(pa, unit(()))((a,_) => f(a))
+
+  def parMap[A, B](ps: List[A])(f: A => B): Par[List[B]] = {
+    ???
+  }
+
+  def sequenece[A](ps: List[Par[A]]): Par[List[A]] = {
+    ???
+  }
 
   def sortPar(parList: Par[List[Int]]) = map(parList)(_.sorted)
 

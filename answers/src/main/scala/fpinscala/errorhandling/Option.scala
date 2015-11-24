@@ -97,7 +97,8 @@ object Option {
   unfortunate consequence of Scala using subtyping to encode algebraic data types.
   */
   def sequence_1[A](a: List[Option[A]]): Option[List[A]] =
-    a.foldRight[Option[List[A]]](Some(Nil))((x,y) => map2(x,y)(_ :: _))
+    //a.foldRight[Option[List[A]]](Some(Nil))((x,y) => map2(x,y)(_ :: _))
+    a.foldLeft[Option[List[A]]](Some(Nil))((x,y) => map2(x,y)((xg, yg) => yg :: xg))
 
   def traverse[A, B](a: List[A])(f: A => Option[B]): Option[List[B]] =
     a match {

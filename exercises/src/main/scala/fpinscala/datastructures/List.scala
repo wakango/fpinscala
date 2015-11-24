@@ -1,5 +1,7 @@
 package fpinscala.datastructures
 
+import scala.annotation.tailrec
+
 sealed trait List[+A] // `List` data type, parameterized on a type, `A`
 case object Nil extends List[Nothing] // A `List` data constructor representing the empty list
 /* Another data constructor, representing nonempty lists. Note that `tail` is another `List[A]`,
@@ -8,6 +10,11 @@ which may be `Nil` or another `Cons`.
 case class Cons[+A](head: A, tail: List[A]) extends List[A]
 
 object List { // `List` companion object. Contains functions for creating and working with lists.
+
+  def exits[A](l: List[A])(f: (A => Boolean)) = {
+    foldRight(l, false)((a, b) => f(a) || b)
+  }
+
   def sum(ints: List[Int]): Int = ints match { // A function that uses pattern matching to add up a list of integers
     case Nil => 0 // The sum of the empty list is 0.
     case Cons(x,xs) => x + sum(xs) // The sum of a list starting with `x` is `x` plus the sum of the rest of the list.
@@ -50,19 +57,61 @@ object List { // `List` companion object. Contains functions for creating and wo
     foldRight(ns, 1.0)(_ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
 
-  def tail[A](l: List[A]): List[A] = sys.error("todo")
+  def tail[A](l: List[A]): List[A] = l match {
+    case Nil => sys.error("からのリストにtailはない")
+    case Cons(_, xs) => xs
+  }
 
-  def setHead[A](l: List[A], h: A): List[A] = sys.error("todo")
+  def setHead[A](l: List[A], h: A): List[A] = l match {
+    //case Nil => sys.error("setHead on empty list")
+    //case Cons(_,t) => Cons(h,t)
 
-  def drop[A](l: List[A], n: Int): List[A] = sys.error("todo")
+    case Nil => sys.error("空のリストにheadはない")
+    case Cons(_, xs) => Cons(h, xs)
+  }
 
-  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = sys.error("todo")
+  def drop[A](l: List[A], n: Int): List[A] = l match {
+    case Nil => sys.error("空のリストはdropできない")
+    case Cons(_, xs) if n >= 1 => drop(xs, n - 1)
+    case _ if n == 0 => l
+  }
 
-  def init[A](l: List[A]): List[A] = sys.error("todo")
+  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = l match {
+    case Cons(h, t) if f(h) => dropWhile(t, f)
+    case _ => l
+  }
 
-  def length[A](l: List[A]): Int = sys.error("todo")
+  def init[A](l: List[A]): List[A] = l match {
+    case Nil => Nil
+    case Cons(_, Nil) => Nil
+    case Cons(h, t) => Cons(h, init(t))
+  }
 
-  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = sys.error("todo")
+  def length[A](l: List[A]): Int =
+    foldRight(l, 0)((_, acc) => acc + 1)
+
+  @tailrec
+  def foldLeft[A,B](l: List[A], z: B)(f: (B, A) => B): B = l match {
+    case Nil => z
+    case Cons(h, t) => foldLeft(t, f(z, h))(f)
+  }
+
+  def sumViaFoldLeft(l: List[Int]): Int = foldLeft(l, 0)(_ + _)
+
+  def productViaFoldLeft(l: List[Double]): Double = foldLeft(l, 1.0)(_ * _)
+
+  def lengthViaFoldLeft[A](l: List[A]): Int = foldLeft(l, 0)((acc, _) => acc + 1)
+
+  def reverse[A](l: List[A]): List[A] = foldLeft(l, Nil: List[A])((b, a) => Cons(a, b))
+
+  def foldRightViaFoldLeft[A, B](l: List[A], z: B)(f: (A, B) => B): B = {
+    ???
+  }
+
+  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] =
+    foldRight(l, r)(Cons(_, _))
+
+  def concat[A](ll: List[List[A]]): List[A] = foldLeft(ll, List[A]())((acc, la) => append(acc, la))
 
   def map[A,B](l: List[A])(f: A => B): List[B] = sys.error("todo")
 }

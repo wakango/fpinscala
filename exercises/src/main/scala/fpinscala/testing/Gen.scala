@@ -14,12 +14,10 @@ shell, which you can fill in and modify while working through the chapter.
 */
 
 trait Prop {
-  def run: TestCases => Result
-  def check: Boolean
+  def run: (TestCases, RNG) => Result
+  def check: Result
   def &&(p: Prop): Prop = {
-    new Prop {
-      override def check: Boolean = this.check && p.check
-    }
+    ???
   }
 }
 
@@ -39,10 +37,29 @@ object Prop {
 
   def apply(run: (TestCases, RNG) => Result): Prop = new Prop {
     override def run: (TestCases, RNG) => Result = run
-    override def check: Boolean = ???
+    override def check: Result = ???
   }
 
-  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = ???
+  def forAll[A](gen: Gen[A])(f: A => Boolean): Prop = Prop(
+    (n, rng) => randomStream(gen)(rng).zip(Stream.from(0)).take(n).map {
+      case (a, i) => try {
+        if (f(a)) Passed else Falsified(a.toString, i)
+      } catch { case e: Exception => Falsified(buildMsg(a, e), i) }
+    }.find(_.isFalsified).getOrElse(Passed)
+  )
+
+  def randomStream[A](g: Gen[A])(rng: RNG): Stream[A] = {
+    Stream.unfold(rng)(rng => Some(g.sample.run(rng)))
+  }
+
+  def buildMsg[A](s: A, e: Exception): String = {
+    s"""
+       |test case $s
+       |generated an Exception: ${e.getMessage}
+       |stack trace:
+       |${e.getStackTrace.mkString("\n")}
+       |"""".stripMargin
+  }
 }
 
 object Gen {
